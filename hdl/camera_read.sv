@@ -25,7 +25,7 @@ module camera_read(
                frame_done_out <= 0;
                pixel_half <= 0;
             end
-            
+
             ROW_CAPTURE: begin 
                FSM_state <= vsync_in ? WAIT_FRAME_START : ROW_CAPTURE;
                frame_done_out <= vsync_in ? 1 : 0;
