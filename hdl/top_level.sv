@@ -3,6 +3,9 @@
 module top_level(
     input wire clk_100mhz,
 
+    // Switches
+    input wire [15:0] sw,
+
     // Camera signals
     input wire [7:0] ja, // pixel data from camera
     input wire [2:0] jb, // other data from camera
@@ -35,6 +38,41 @@ module top_level(
         .hsync_out(hsync),
         .vsync_out(vsync),
         .blank_out(blank)
+    );
+
+    //
+    // Track draw
+    //
+
+    // obstacle: type, position, lane, active
+    // ttpppppppppplla
+    // [14:13] [12:3] [2:1] [0]
+    logic [14:0] obstacles [9:0] = '{
+        15'b0,
+        15'b0,
+        15'b0,
+        15'b0,
+        15'b0,
+        15'b0,
+        15'b0,
+        15'b0,
+        15'b00_0000000000_00_1,
+        15'b00_0001101000_10_1
+    };
+    wire [11:0] track_rgb;
+
+    track_draw track_drawer(
+        .system_clock_in(clk_65mhz),
+
+        .hcount(hcount),
+        .vcount(vcount),
+        .hsync(hsync),
+        .vsync(vsync),
+        .blank(blank),
+
+        .obstacles(obstacles),
+
+        .rgb(track_rgb)
     );
 
     //
@@ -137,15 +175,13 @@ module top_level(
     // VGA signal switching
     //
 
-    reg b,hs,vs;
-    always_ff @(posedge clk_65mhz) begin
-        // TODO: this is where we would switch the vga circuit's input, based on the game FSM
-        hs <= hsync;
-        vs <= vsync;
-        b <= blank;
-        rgb <= camera_debug_rgb;
-//       rgb <= 12'hFFF;
-    end
+    wire b,hs,vs;
+    assign hs = hsync;
+    assign vs = vsync;
+    assign b = blank;
+
+    // TODO: this is where we would switch the vga circuit's input, based on the game FSM
+    assign rgb = (sw[0] ? track_rgb : camera_debug_rgb);
 
     //
     // VGA wiring

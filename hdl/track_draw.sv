@@ -17,6 +17,7 @@ module track_draw(
     // obstacle: type, position, lane, active
     // ttpppppppppplla
     // [14:13] [12:3] [2:1] [0]
+    // is there a way to name these? structs???
 
     parameter SCREEN_WIDTH = 1024;
     parameter SCREEN_HEIGHT = 768;
@@ -35,15 +36,26 @@ module track_draw(
     genvar i;
     generate
         for (i = 0; i < 10; i++) begin
-            assign obstacle_active[i] = (obstacles[i][0] && (
-                (hcount > obstacles[i][12:3]) &&
-                (hcount < (obstacles[i][12:3] + OBSTACLE_WIDTH))
-            ));
+            assign obstacle_active[i] = (
+                // is active?
+                obstacles[i][0] &&
+
+                // is in current lane?
+                obstacles[i][2:1] == current_lane &&
+
+                // does hcount intersect?
+                (
+                    (hcount > obstacles[i][12:3]) &&
+                    (hcount < (obstacles[i][12:3] + OBSTACLE_WIDTH))
+                )
+            );
         end
     endgenerate
 
     always_ff @(posedge system_clock_in) begin
-        rgb <= current_lane << 12'd2;
+        rgb <= ((obstacle_active[0] || obstacle_active[1]) ? 12'hFFF :
+            (current_lane << 12'd2)
+        );
     end
 
 endmodule
