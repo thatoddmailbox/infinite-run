@@ -38,42 +38,23 @@ module top_level(
     );
 
     //
-    // Camera timing
+    // Camera timing and input buffering
     //
-    // TODO: probably this needs to be moved into its own module
+    // TODO: this might need to be moved into its own module?
 
     logic xclk;
     logic [1:0] xclk_count;
     assign xclk = (xclk_count > 2'b01);
     assign jbclk = xclk;
 
-    //
-    // Camera frame read
-    //
-    // TODO: this def needs to be moved into its own module
-
     logic pclk_buff, pclk_in;
     logic vsync_buff, vsync_in;
     logic href_buff, href_in;
     logic [7:0] pixel_buff, pixel_in;
-    logic [15:0] output_pixels;
-    logic [11:0] processed_pixels;
-    logic valid_pixel;
-    logic frame_done_out;
 
-    logic [16:0] pixel_addr_in;
-    logic [16:0] pixel_addr_out;
-
-    logic [11:0] cam;
-    logic [11:0] frame_buff_out;
-
-    always_ff @(posedge pclk_in) begin
-        if (frame_done_out) begin
-            pixel_addr_in <= 17'b0;
-        end else if (valid_pixel) begin
-            pixel_addr_in <= pixel_addr_in + 1;
-        end
-    end
+    logic [15:0] pixel_data;
+    logic pixel_valid;
+    logic frame_done;
 
     always_ff @(posedge clk_65mhz) begin
         xclk_count <= xclk_count + 2'b01;
@@ -87,20 +68,19 @@ module top_level(
         vsync_in <= vsync_buff;
         href_in <= href_buff;
         pixel_in <= pixel_buff;
-
-        processed_pixels = {output_pixels[15:12], output_pixels[10:7], output_pixels[4:1]};
     end
 
-    blk_mem_camera_frame framebuffer(
-        .addra(pixel_addr_in),
-        .clka(pclk_in),
-        .dina(processed_pixels),
-        .wea(valid_pixel),
+    //
+    // Camera frame read and processing
+    //
+    wire [9:0] frame_x_count;
+    wire [8:0] frame_y_count;
+    wire [1:0] lane;
+    wire jump;
+    wire [8:0] quadrants;
+    wire vision_data_valid;
 
-        .addrb(pixel_addr_out),
-        .clkb(clk_65mhz),
-        .doutb(frame_buff_out)
-    );
+    wire [11:0] camera_debug_rgb;
 
     camera_read camera_reader(
         .pixel_clock_in(pclk_in),
@@ -109,13 +89,49 @@ module top_level(
         .href_in(href_in),
         .pixel_data_in(pixel_in),
 
-        .pixel_data_out(output_pixels),
-        .pixel_valid_out(valid_pixel),
-        .frame_done_out(frame_done_out)
+        .frame_x_count_out(frame_x_count),
+        .frame_y_count_out(frame_y_count),
+        .pixel_data_out(pixel_data),
+        .pixel_valid_out(pixel_valid),
+        .frame_done_out(frame_done)
     );
 
-    assign pixel_addr_out = hcount+vcount*32'd320;
-    assign cam = ((hcount<320) && (vcount<240)) ? frame_buff_out : 12'hFFF;
+    vision_process process(
+        .pixel_clock_in(pclk_in),
+
+        .frame_x_count(frame_x_count),
+        .frame_y_count(frame_y_count),
+        .pixel_data(pixel_data),
+        .pixel_valid(pixel_valid),
+
+        .lane(lane),
+        .jump(jump),
+        .quadrants(quadrants),
+        .data_valid(vision_data_valid)
+    );
+
+    camera_debug_draw debug_draw(
+        .system_clock_in(clk_65mhz),
+
+        .hcount(hcount),
+        .vcount(vcount),
+        .hsync(hsync),
+        .vsync(vsync),
+        .blank(blank),
+
+        .rgb(camera_debug_rgb),
+
+        .pixel_clock_in(pclk_in),
+
+        .pixel_data(pixel_data),
+        .pixel_valid(pixel_valid),
+        .frame_done(frame_done),
+
+        .lane(lane),
+        .jump(jump),
+        .quadrants(quadrants),
+        .vision_data_valid(vision_data_valid)
+    );
 
     //
     // VGA signal switching
@@ -127,7 +143,7 @@ module top_level(
         hs <= hsync;
         vs <= vsync;
         b <= blank;
-        rgb <= cam;
+        rgb <= camera_debug_rgb;
 //       rgb <= 12'hFFF;
     end
 
