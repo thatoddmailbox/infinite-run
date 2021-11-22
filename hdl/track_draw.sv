@@ -24,13 +24,28 @@ module track_draw(
 
     localparam LANE_HEIGHT = SCREEN_HEIGHT / 3;
 
-    localparam OBSTACLE_MARGIN = 10;
-    localparam OBSTACLE_HEIGHT = LANE_HEIGHT - OBSTACLE_MARGIN;
+    localparam OBSTACLE_MARGIN = 16;
+    localparam OBSTACLE_HEIGHT = LANE_HEIGHT - 2*OBSTACLE_MARGIN;
     localparam OBSTACLE_WIDTH = OBSTACLE_HEIGHT;
 
     wire [1:0] current_lane;
     assign current_lane = (vcount < LANE_HEIGHT) ? 2'd0 :
                           (vcount < LANE_HEIGHT*2) ? 2'd1 : 2'd2;
+
+    wire in_lane_margin;
+    assign in_lane_margin = (
+        // lane 0 top
+        (vcount < OBSTACLE_MARGIN) ||
+
+        // lane 0 bottom, lane 1 top
+        ((vcount > (LANE_HEIGHT*1) - OBSTACLE_MARGIN) && (vcount < (LANE_HEIGHT*1) + OBSTACLE_MARGIN)) ||
+
+        // lane 1 bottom, lane 2 top
+        ((vcount > (LANE_HEIGHT*2) - OBSTACLE_MARGIN) && (vcount < (LANE_HEIGHT*2) + OBSTACLE_MARGIN)) ||
+
+        // lane 2 bottom
+        (vcount > (LANE_HEIGHT*3) - OBSTACLE_MARGIN)
+    );
 
     wire obstacle_active [9:0];
     genvar i;
@@ -53,7 +68,7 @@ module track_draw(
     endgenerate
 
     always_ff @(posedge system_clock_in) begin
-        rgb <= ((obstacle_active[0] || obstacle_active[1]) ? 12'hFFF :
+        rgb <= (!in_lane_margin && (obstacle_active[0] || obstacle_active[1] || obstacle_active[2]) ? 12'hFFF :
             (current_lane << 12'd2)
         );
     end
