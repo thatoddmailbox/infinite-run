@@ -1,4 +1,4 @@
-`timescale 1ns / 1ps
+`default_nettype none
 
 module vision_process(
     input wire pixel_clock_in,
@@ -67,6 +67,8 @@ module vision_process(
 
             // set lane and jump
             // TODO
+            lane <= 2'b0;
+            jump <= 1'b0;
 
             // clear quadrants (and send them out for debugging)
             quadrants <= quadrant_state;
@@ -92,3 +94,5 @@ module vision_process(
     end
 
 endmodule
+
+`default_nettype wire
