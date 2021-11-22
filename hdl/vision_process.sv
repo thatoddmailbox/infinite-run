@@ -46,7 +46,7 @@ module vision_process(
                 2'd1 : 2'd2
             )
     );
-    // TODO: this is weird, can we do better? does it synthesize?
+    // TODO: this is weird, can we do better? does it synthesize well?
     // (maybe do addition instead?
     wire [3:0] quadrant =
         (quadrant_col == 2'd0 && quadrant_row == 2'd0) ? 4'd0 :
