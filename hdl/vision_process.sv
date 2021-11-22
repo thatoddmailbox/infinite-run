@@ -70,6 +70,7 @@ module vision_process(
 
             // clear quadrants (and send them out for debugging)
             quadrants <= quadrant_state;
+            quadrant_state <= 9'b0;
 
             // set data valid
             data_valid <= 1'b1;
