@@ -17,7 +17,7 @@ module vision_process(
     parameter FRAME_WIDTH = 10'd320;
     parameter FRAME_HEIGHT = 9'd240;
 
-    parameter GREEN_THRESHOLD = 6'd60;
+    parameter GREEN_THRESHOLD = 6'd25;
 
     localparam FRAME_WIDTH_DIVIDER = FRAME_WIDTH / 3;
     localparam FRAME_HEIGHT_DIVIDER = FRAME_HEIGHT / 3;
@@ -30,7 +30,6 @@ module vision_process(
     // |  3  |  4  |  5  |
     // |  6  |  7  |  8  |
     // +-----------------+
-    logic [8:0] quadrant_state;
 
     wire [1:0] quadrant_col = (
         frame_x_count < FRAME_WIDTH_DIVIDER ?
@@ -59,6 +58,10 @@ module vision_process(
         (quadrant_col == 2'd1 && quadrant_row == 2'd2) ? 4'd7 :
         (quadrant_col == 2'd2 && quadrant_row == 2'd2) ? 4'd8 : 4'd0;
 
+    wire [2:0] lane_0_quadrants = quadrants[0] + quadrants[3] + quadrants[6];
+    wire [2:0] lane_1_quadrants = quadrants[1] + quadrants[4] + quadrants[7];
+    wire [2:0] lane_2_quadrants = quadrants[2] + quadrants[5] + quadrants[8];
+
     always_ff @(posedge pixel_clock_in) begin
         if (frame_start && !pixel_valid) begin
             // start of a frame
@@ -66,29 +69,33 @@ module vision_process(
             // (that way we still process the first pixel correctly)
 
             // set lane and jump
-            // TODO
-            lane <= 2'b0;
-            jump <= 1'b0;
-
-            // clear quadrants (and send them out for debugging)
-            quadrants <= quadrant_state;
-            quadrant_state <= 9'b0;
+            // TODO: this is kinda weird
+            lane <= (
+                (lane_2_quadrants >= lane_0_quadrants && lane_2_quadrants >= lane_1_quadrants) ? 2'd2 :
+                (lane_1_quadrants >= lane_0_quadrants && lane_1_quadrants >= lane_2_quadrants) ? 2'd1 :
+                (lane_0_quadrants >= lane_1_quadrants && lane_0_quadrants >= lane_2_quadrants) ? 2'd0 : 2'd3
+            );
+            jump <= ~(quadrants[6] || quadrants[7] || quadrants[8]);
 
             // set data valid
             data_valid <= 1'b1;
         end else if (pixel_valid) begin
-            // clear data flag
-            data_valid <= 1'b0;
+            if (data_valid) begin
+                // clear data flag and data
+                data_valid <= 1'b0;
+                quadrants <= 9'b0;
+            end
 
             // compare the green channel with the threshold
             // it's rgb565, which looks like:
             // 15 11 | 10   5 | 4   0
             // rrrrr | gggggg | bbbbb
             // so we want [10:5]
-            if (pixel_data[10:5] < GREEN_THRESHOLD) begin
+            // HACK: workaround for pipelining issue
+            if (pixel_data[10:5] < GREEN_THRESHOLD && frame_x_count > 10) begin
                 // a "green-ness" below the threshold indicates that we are NOT looking at the green screen
                 // and therefore this is the player (or I guess some other blob lol)
-                quadrant_state[quadrant] <= 1'b1;
+                quadrants[quadrant] <= 1'b1;
             end
         end
     end
