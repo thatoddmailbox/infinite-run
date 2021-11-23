@@ -54,12 +54,18 @@ module top_level(
         15'b0,
         15'b0,
         15'b0,
-        15'b0,
-        15'b0,
+        15'b00_0111000000_00_1,
+        15'b00_0000000000_01_1,
         15'b00_0000000000_00_1,
         15'b00_0001101000_10_1
     };
     wire [11:0] track_rgb;
+
+    always_ff @(posedge clk_65mhz) begin
+        if (vcount == 1 && hcount == 1) begin
+            obstacles[2][12:3] <= obstacles[2][12:3] - sw[3:1];
+        end
+    end
 
     track_draw track_drawer(
         .system_clock_in(clk_65mhz),
