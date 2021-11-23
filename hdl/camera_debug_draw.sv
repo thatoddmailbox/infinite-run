@@ -33,6 +33,18 @@ module camera_debug_draw(
 
     logic [8:0] quadrants_buffer;
     logic [8:0] quadrants_buffer2;
+    logic [8:0] quadrants_buffer3;
+
+    logic vision_data_valid_buffer;
+    logic vision_data_valid_buffer2;
+
+    logic [1:0] lane_buffer;
+    logic [1:0] lane_buffer2;
+    logic [1:0] lane_buffer3;
+
+    logic jump_buffer;
+    logic jump_buffer2;
+    logic jump_buffer3;
 
     logic [16:0] pixel_addr_in;
     logic [16:0] pixel_addr_out;
@@ -48,10 +60,23 @@ module camera_debug_draw(
             pixel_addr_in <= pixel_addr_in + 1;
         end
 
-        if (vision_data_valid) begin
-            quadrants_buffer <= quadrants;
-        end
+        quadrants_buffer <= quadrants;
         quadrants_buffer2 <= quadrants_buffer;
+
+        vision_data_valid_buffer <= vision_data_valid;
+        vision_data_valid_buffer2 <= vision_data_valid_buffer;
+
+        lane_buffer <= lane;
+        lane_buffer2 <= lane_buffer;
+
+        jump_buffer <= jump;
+        jump_buffer2 <= jump_buffer;
+
+        if (vision_data_valid_buffer2) begin
+            quadrants_buffer3 <= quadrants_buffer2;
+            lane_buffer3 <= lane_buffer2;
+            jump_buffer3 <= jump_buffer2;
+        end
     end
 
     blk_mem_camera_frame framebuffer(
@@ -78,10 +103,20 @@ module camera_debug_draw(
         ((hcount<320+((320/3)*2)) && (vcount<(240/3)*3)) ? 4'd7 :
         ((hcount<320+((320/3)*3)) && (vcount<(240/3)*3)) ? 4'd8 : 4'd0;
 
+    wire [1:0] current_lane_index =
+        (hcount < 640+((320/3)*1)) ? 2'd0 :
+        (hcount < 640+((320/3)*2)) ? 2'd1 :
+        (hcount < 640+((320/3)*3)) ? 2'd2 : 2'd3;
+
     assign rgb = ((hcount<320) && (vcount<240)) ? frame_buff_out :
                  ((hcount<640) && (vcount<240)) ? (
-                    (quadrants_buffer2[current_quadrant] == 1'b1) ? 12'h00F : 12'h000
-//                      (current_quadrant << 5'd1)
+                    (quadrants_buffer3[current_quadrant] == 1'b1) ? 12'h00F : 12'h000
+                 ) :
+                 ((hcount<960) && (vcount<240)) ? (
+                    (current_lane_index == lane_buffer3 ?
+                        (jump_buffer3 ? 12'h0F0 : 12'hF00) :
+                        12'h000
+                    )
                  ) : 12'hFFF;
 
 endmodule
