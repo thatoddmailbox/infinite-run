@@ -1,5 +1,7 @@
 `default_nettype none
 
+`include "data.sv"
+
 module track_draw(
     input wire system_clock_in,
 
@@ -9,15 +11,10 @@ module track_draw(
     input wire vsync,
     input wire blank,
 
-    input wire [14:0] obstacles [9:0],
+    input wire obstacle obstacles [9:0],
 
     output logic [11:0] rgb
 );
-
-    // obstacle: type, position, lane, active
-    // ttpppppppppplla
-    // [14:13] [12:3] [2:1] [0]
-    // is there a way to name these? structs???
 
     parameter SCREEN_WIDTH = 1024;
     parameter SCREEN_HEIGHT = 768;
@@ -53,15 +50,15 @@ module track_draw(
         for (i = 0; i < 10; i++) begin
             assign obstacle_active[i] = (
                 // is active?
-                obstacles[i][0] &&
+                obstacles[i].active &&
 
                 // is in current lane?
-                obstacles[i][2:1] == current_lane &&
+                obstacles[i].lane == current_lane &&
 
                 // does hcount intersect?
                 (
-                    (hcount > obstacles[i][12:3]) &&
-                    (hcount < (obstacles[i][12:3] + OBSTACLE_WIDTH))
+                    (hcount > obstacles[i].position) &&
+                    (hcount < (obstacles[i].position + OBSTACLE_WIDTH))
                 )
             );
         end

@@ -1,5 +1,7 @@
 `default_nettype none
 
+`include "data.sv"
+
 module top_level(
     input wire clk_100mhz,
 
@@ -47,7 +49,7 @@ module top_level(
     // obstacle: type, position, lane, active
     // ttpppppppppplla
     // [14:13] [12:3] [2:1] [0]
-    logic [14:0] obstacles [9:0] = '{
+    obstacle obstacles [9:0] = '{
         15'b0,
         15'b0,
         15'b0,
@@ -63,7 +65,7 @@ module top_level(
 
     always_ff @(posedge clk_65mhz) begin
         if (vcount == 1 && hcount == 1) begin
-            obstacles[2][12:3] <= obstacles[2][12:3] - sw[3:1];
+            obstacles[2].position <= obstacles[2].position - sw[3:1];
         end
     end
 
