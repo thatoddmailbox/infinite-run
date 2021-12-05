@@ -11,4 +11,14 @@ typedef struct packed {
     logic active;
 } obstacle;
 
+
+parameter SCREEN_WIDTH = 1024;
+parameter SCREEN_HEIGHT = 768;
+
+localparam LANE_HEIGHT = SCREEN_HEIGHT / 3;
+
+localparam OBSTACLE_MARGIN = 16;
+localparam OBSTACLE_HEIGHT = LANE_HEIGHT - 2*OBSTACLE_MARGIN;
+localparam OBSTACLE_WIDTH = OBSTACLE_HEIGHT;
+
 `endif

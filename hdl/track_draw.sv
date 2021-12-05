@@ -16,15 +16,6 @@ module track_draw(
     output logic [11:0] rgb
 );
 
-    parameter SCREEN_WIDTH = 1024;
-    parameter SCREEN_HEIGHT = 768;
-
-    localparam LANE_HEIGHT = SCREEN_HEIGHT / 3;
-
-    localparam OBSTACLE_MARGIN = 16;
-    localparam OBSTACLE_HEIGHT = LANE_HEIGHT - 2*OBSTACLE_MARGIN;
-    localparam OBSTACLE_WIDTH = OBSTACLE_HEIGHT;
-
     wire [1:0] current_lane;
     assign current_lane = (vcount < LANE_HEIGHT) ? 2'd0 :
                           (vcount < LANE_HEIGHT*2) ? 2'd1 : 2'd2;
