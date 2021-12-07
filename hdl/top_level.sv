@@ -53,30 +53,19 @@ module top_level(
     // obstacle: type, position, lane, active
     // ttpppppppppplla
     // [15:14] [13:3] [2:1] [0]
-    obstacle obstacles [9:0] = '{
-        16'b0,
-        16'b0,
-        16'b0,
-        16'b0,
-        16'b0,
-        16'b0,
-        16'b00_00111000000_00_1,
-        16'b00_00000000000_01_1,
-        16'b00_00000000000_00_1,
-        16'b00_00001101000_10_1
-    };
+    obstacle obstacles [9:0];
     wire [11:0] track_rgb;
 
     always_ff @(posedge clk_65mhz) begin
-        if (vcount == 1 && hcount == 1) begin
-            if (obstacles[2].position <= sw[3:1]) begin
-                // reset
-                obstacles[2].position <= 10'd1023;
-            end else begin
-                // normal
-                obstacles[2].position <= obstacles[2].position - sw[3:1];
-            end
-        end
+//        if (vcount == 1 && hcount == 1) begin
+//            if (obstacles[2].position <= sw[3:1]) begin
+//                // reset
+//                obstacles[2].position <= 10'd1023;
+//            end else begin
+//                // normal
+//                obstacles[2].position <= obstacles[2].position - sw[3:1];
+//            end
+//        end
     end
 
     track_draw track_drawer(
