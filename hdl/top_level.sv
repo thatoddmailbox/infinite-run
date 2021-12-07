@@ -4,6 +4,7 @@
 
 module top_level(
     input wire clk_100mhz,
+    input wire btnc,
 
     // Switches
     input wire [15:0] sw,
@@ -23,6 +24,9 @@ module top_level(
 
     logic clk_65mhz;
     clk_wiz_65mhz divider(.clk_in1(clk_100mhz), .clk_out1(clk_65mhz));
+    
+    logic reset;
+    debounce db(.reset_in(reset),.clock_in(clk_65mhz),.noisy_in(btnc),.clean_out(reset));
 
     //
     // VGA timing
@@ -184,6 +188,72 @@ module top_level(
         .quadrants(quadrants),
         .vision_data_valid(vision_data_valid)
     );
+    
+    wire reset_game;
+    wire playing;
+    wire game_over;
+    wire [11:0] time_alive;
+    wire pulse;
+    wire timer_expired;
+    wire timer_start;
+    wire [3:0] time_to_wait;
+    wire [1:0] lane2;
+    wire jump2;
+    wire [1:0] lane3;
+    wire jump3;
+    wire died;
+    assign died = 0;
+    
+    timer timer(
+        .clk_in(clk_65mhz),
+        .rst_in(reset),
+        .start_in(timer_start),
+        .value_in(time_to_wait),
+        .expired_out(timer_expired),
+        .pulse_100ms_out(pulse));
+
+    gamefsm gamefsm(
+        .clk_in(clk_65mhz),
+        .rst_in(reset),
+        .pulse(pulse),
+        .died(died),
+        .lane(lane),
+        .jump(jump),
+        .playing(playing),
+        .game_over(game_over),
+        .time_alive(time_alive),
+        .reset_game(reset_game),
+        .lane_out(lane2),
+        .jump_out(jump2));
+
+    wire [3:0] random_num;
+    randomizer randomizer(
+        .clk_in(clk_65mhz),
+        .rst_in(reset),
+        .value(random_num));
+
+    wire [3:0] random_num2;
+    randomizer randomizer2(
+        .clk_in(clk_65mhz),
+        .rst_in(reset),
+        .value(random_num2));
+
+    obstacle_generator obstacle_generator(
+        .clk_in(clk_65mhz),
+        .rst_in(reset),
+        .game_reset(reset_game),
+        .jump_in(jump2),
+        .lane_in(lane2),
+        .time_alive(time_alive),
+        .random_num(random_num),
+        .random_lane(random_num2[3:2]),
+        .random_sprite(random_num2[1:0]),
+        .expired_in(timer_expired),
+        .obstacles_out(obstacles),
+        .player_lane(lane3),
+        .player_jump(jump3),
+        .start_timer(timer_start),
+        .time_to_wait(time_to_wait));
 
     //
     // VGA signal switching
