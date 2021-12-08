@@ -28,7 +28,7 @@ module death(
                 !jump &&
 
                 // intersects with edge?
-                obstacles[i].position < OBSTACLE_WIDTH
+                obstacles[i].position > (OBSTACLE_WIDTH/4) && obstacles[i].position < OBSTACLE_WIDTH
             );
         end
     endgenerate

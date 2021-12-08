@@ -17,7 +17,7 @@ module vision_debouncer(
 );
 
     // clock is at 65 MHz, t = 15.38 ns
-    parameter TIME_DELAY = 30'd32_500_000;
+    parameter TIME_DELAY = 30'd48_750_000;
     logic [29:0] timer;
 
     // sync registers, since vision data comes in on a different clock doamin

@@ -36,9 +36,9 @@ module vision_process(
             )
     );
     wire [1:0] quadrant_row = (
-        frame_y_count < CAMERA_CELL_HEIGHT ?
+        frame_y_count < CAMERA_TOP_ROW_HEIGHT ?
             2'd0 :
-            (frame_y_count < 2*CAMERA_CELL_HEIGHT ?
+            (frame_y_count < CAMERA_MIDDLE_ROW_Y ?
                 2'd1 : 2'd2
             )
     );
