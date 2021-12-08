@@ -147,7 +147,7 @@ module obstacle_generator(
 
                 // generate new obstacle
                 obstacles_out[next_free_slot].active <= 1;
-                obstacles_out[next_free_slot].lane <= random_lane;
+                obstacles_out[next_free_slot].lane <= (random_lane == 2'd3 ? 2'd1 : random_lane);
                 obstacles_out[next_free_slot].position <= 11'd1023 + OBSTACLE_WIDTH;
                 obstacles_out[next_free_slot].sprite_type <= random_sprite;
             end else begin
