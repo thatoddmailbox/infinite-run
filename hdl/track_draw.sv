@@ -13,6 +13,9 @@ module track_draw(
 
     input wire obstacle obstacles [9:0],
 
+    input wire [1:0] lane,
+    input wire jump,
+
     output logic [11:0] rgb
 );
 
@@ -35,6 +38,11 @@ module track_draw(
         (vcount > (LANE_HEIGHT*3) - OBSTACLE_MARGIN)
     );
 
+    wire in_lane_indicator;
+    assign in_lane_indicator = (
+        (hcount < 16)
+    );
+
     wire obstacle_active [9:0];
     genvar i;
     generate
@@ -48,8 +56,17 @@ module track_draw(
 
                 // does hcount intersect?
                 (
-                    (hcount > obstacles[i].position) &&
-                    (hcount < (obstacles[i].position + OBSTACLE_WIDTH))
+                    // normal check
+                    (
+                        (hcount > (obstacles[i].position - OBSTACLE_WIDTH)) &&
+                        (hcount < obstacles[i].position)
+                    ) ||
+
+                    // special case: we're on the edge
+                    (
+                        obstacles[i].position < OBSTACLE_WIDTH &&
+                        hcount < obstacles[i].position
+                    )
                 )
             );
         end
@@ -82,13 +99,15 @@ module track_draw(
     );
 
     always_ff @(posedge system_clock_in) begin
-        rgb <= ((!in_lane_margin && obstacle_index != 4'hF) ?
+        rgb <= (in_lane_indicator ? (
+                current_lane == lane ? (jump ? 12'h0F0 : 12'hF00) : 12'hFFF
+            ) : ((!in_lane_margin && obstacle_index != 4'hF) ?
             // obstacle
             obstacle_color :
 
             // lane background
             (current_lane << 12'd2)
-        );
+        ));
     end
 
 endmodule

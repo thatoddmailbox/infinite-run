@@ -1,4 +1,5 @@
 `default_nettype none
+`include "data.sv"
 
 module camera_debug_draw(
     input wire system_clock_in,
@@ -8,6 +9,8 @@ module camera_debug_draw(
     input wire hsync,
     input wire vsync,
     input wire blank,
+
+    input wire show_outline,
 
     output logic [11:0] rgb,
 
@@ -93,22 +96,28 @@ module camera_debug_draw(
     assign pixel_addr_out = hcount+vcount*32'd320;
     // TODO: jank
     assign current_quadrant =
-        ((hcount<320+((320/3)*1)) && (vcount<(240/3)*1)) ? 4'd0 :
-        ((hcount<320+((320/3)*2)) && (vcount<(240/3)*1)) ? 4'd1 :
-        ((hcount<320+((320/3)*3)) && (vcount<(240/3)*1)) ? 4'd2 :
-        ((hcount<320+((320/3)*1)) && (vcount<(240/3)*2)) ? 4'd3 :
-        ((hcount<320+((320/3)*2)) && (vcount<(240/3)*2)) ? 4'd4 :
-        ((hcount<320+((320/3)*3)) && (vcount<(240/3)*2)) ? 4'd5 :
-        ((hcount<320+((320/3)*1)) && (vcount<(240/3)*3)) ? 4'd6 :
-        ((hcount<320+((320/3)*2)) && (vcount<(240/3)*3)) ? 4'd7 :
-        ((hcount<320+((320/3)*3)) && (vcount<(240/3)*3)) ? 4'd8 : 4'd0;
+        ((hcount<320+CAMERA_SIDE_LANE_WIDTH) && (vcount<(240/3)*1)) ? 4'd0 :
+        ((hcount<320+CAMERA_RIGHT_LANE_X) && (vcount<(240/3)*1)) ? 4'd1 :
+        ((hcount<320+CAMERA_WIDTH) && (vcount<(240/3)*1)) ? 4'd2 :
+        ((hcount<320+CAMERA_SIDE_LANE_WIDTH) && (vcount<(240/3)*2)) ? 4'd3 :
+        ((hcount<320+CAMERA_RIGHT_LANE_X) && (vcount<(240/3)*2)) ? 4'd4 :
+        ((hcount<320+CAMERA_WIDTH) && (vcount<(240/3)*2)) ? 4'd5 :
+        ((hcount<320+CAMERA_SIDE_LANE_WIDTH) && (vcount<(240/3)*3)) ? 4'd6 :
+        ((hcount<320+CAMERA_RIGHT_LANE_X) && (vcount<(240/3)*3)) ? 4'd7 :
+        ((hcount<320+CAMERA_WIDTH) && (vcount<(240/3)*3)) ? 4'd8 : 4'd0;
 
     wire [1:0] current_lane_index =
         (hcount < 640+((320/3)*1)) ? 2'd0 :
         (hcount < 640+((320/3)*2)) ? 2'd1 :
         (hcount < 640+((320/3)*3)) ? 2'd2 : 2'd3;
 
-    assign rgb = ((hcount<320) && (vcount<240)) ? frame_buff_out :
+    wire display_outline =
+        show_outline && (hcount > 0 && hcount < CAMERA_WIDTH) && (vcount < CAMERA_HEIGHT) &&
+        ((hcount == CAMERA_SIDE_LANE_WIDTH || hcount == CAMERA_RIGHT_LANE_X) ||
+        (vcount == CAMERA_CELL_HEIGHT || vcount == 2*CAMERA_CELL_HEIGHT));
+
+    assign rgb = (display_outline) ? 12'hF00 :
+                 ((hcount<320) && (vcount<240)) ? frame_buff_out :
                  ((hcount<640) && (vcount<240)) ? (
                     (quadrants_buffer3[current_quadrant] == 1'b1) ? 12'h00F : 12'h000
                  ) :

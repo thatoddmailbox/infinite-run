@@ -24,9 +24,10 @@ module top_level(
 
     logic clk_65mhz;
     clk_wiz_65mhz divider(.clk_in1(clk_100mhz), .clk_out1(clk_65mhz));
-    
-    logic reset;
-    debounce db(.reset_in(reset),.clock_in(clk_65mhz),.noisy_in(btnc),.clean_out(reset));
+
+    wire reset = btnc;
+//    logic reset;
+//    debounce db(.reset_in(reset),.clock_in(clk_65mhz),.noisy_in(btnc),.clean_out(reset));
 
     //
     // VGA timing
@@ -37,6 +38,7 @@ module top_level(
     wire hsync, vsync, blank;
     wire [11:0] pixel;
     reg [11:0] rgb;
+    wire frame_trigger = (hcount == 1 && vcount == 1);
     xvga vga_timing(
         .vclock_in(clk_65mhz),
         .hcount_out(hcount),
@@ -56,7 +58,7 @@ module top_level(
     obstacle obstacles [9:0];
     wire [11:0] track_rgb;
 
-    always_ff @(posedge clk_65mhz) begin
+//    always_ff @(posedge clk_65mhz) begin
 //        if (vcount == 1 && hcount == 1) begin
 //            if (obstacles[2].position <= sw[3:1]) begin
 //                // reset
@@ -66,7 +68,7 @@ module top_level(
 //                obstacles[2].position <= obstacles[2].position - sw[3:1];
 //            end
 //        end
-    end
+//    end
 
     track_draw track_drawer(
         .system_clock_in(clk_65mhz),
@@ -79,7 +81,26 @@ module top_level(
 
         .obstacles(obstacles),
 
+        .lane(lane),
+        .jump(jump),
+
         .rgb(track_rgb)
+    );
+
+    //
+    // Game logic
+    //
+//    assign died = 0;
+    wire died;
+    death d(
+        .system_clock_in(clk_65mhz),
+        .reset(sw[15]),
+
+        .obstacles(obstacles),
+        .lane(lane),
+        .jump(jump),
+
+        .died(died)
     );
 
     //
@@ -164,6 +185,8 @@ module top_level(
         .vsync(vsync),
         .blank(blank),
 
+        .show_outline(sw[1]),
+
         .rgb(camera_debug_rgb),
 
         .pixel_clock_in(pclk_in),
@@ -185,13 +208,12 @@ module top_level(
     wire pulse;
     wire timer_expired;
     wire timer_start;
-    wire [3:0] time_to_wait;
+    wire [5:0] time_to_wait;
     wire [1:0] lane2;
     wire jump2;
     wire [1:0] lane3;
     wire jump3;
-    wire died;
-    assign died = 0;
+//    wire died = 0;
     
     timer timer(
         .clk_in(clk_65mhz),
@@ -215,13 +237,13 @@ module top_level(
         .lane_out(lane2),
         .jump_out(jump2));
 
-    wire [3:0] random_num;
+    wire [7:0] random_num;
     randomizer randomizer(
         .clk_in(clk_65mhz),
         .rst_in(reset),
         .value(random_num));
 
-    wire [3:0] random_num2;
+    wire [7:0] random_num2;
     randomizer randomizer2(
         .clk_in(clk_65mhz),
         .rst_in(reset),
@@ -231,10 +253,11 @@ module top_level(
         .clk_in(clk_65mhz),
         .rst_in(reset),
         .game_reset(reset_game),
+        .frame_trigger(frame_trigger),
         .jump_in(jump2),
         .lane_in(lane2),
         .time_alive(time_alive),
-        .random_num(random_num),
+        .random_num(random_num[3:0]),
         .random_lane(random_num2[3:2]),
         .random_sprite(random_num2[1:0]),
         .expired_in(timer_expired),
@@ -243,6 +266,53 @@ module top_level(
         .player_jump(jump3),
         .start_timer(timer_start),
         .time_to_wait(time_to_wait));
+
+    //
+    // Camera debugging :(
+    //
+    logic [9:0] frame_x_count_buffer;
+    logic [9:0] frame_x_count_buffer2;
+    logic [8:0] frame_y_count_buffer;
+    logic [8:0] frame_y_count_buffer2;
+    logic [8:0] quadrants_buffer;
+    logic [8:0] quadrants_buffer2;
+    logic vision_data_valid_buffer;
+    logic vision_data_valid_buffer2;
+    logic pixel_clock_buffer;
+    logic pixel_clock_buffer2;
+    logic frame_done_buffer;
+    logic frame_done_buffer2;
+
+    always_ff @(posedge clk_65mhz) begin
+        frame_x_count_buffer <= frame_x_count;
+        frame_x_count_buffer2 <= frame_x_count_buffer;
+
+        frame_y_count_buffer <= frame_y_count;
+        frame_y_count_buffer2 <= frame_y_count_buffer;
+
+        quadrants_buffer <= quadrants;
+        quadrants_buffer2 <= quadrants_buffer;
+
+        vision_data_valid_buffer <= vision_data_valid;
+        vision_data_valid_buffer2 <= vision_data_valid_buffer;
+
+        // pclk_in is already synced kinda??
+        pixel_clock_buffer <= pclk_in;
+        pixel_clock_buffer2 <= pixel_clock_buffer;
+
+        frame_done_buffer <= frame_done;
+        frame_done_buffer2 <= frame_done_buffer;
+    end
+
+//    camera_debug_draw_ila ila(
+//        .clk(clk_65mhz),
+//        .probe0(quadrants_buffer2),
+//        .probe1(frame_x_count_buffer2),
+//        .probe2(frame_y_count_buffer2),
+//        .probe3(vision_data_valid_buffer2),
+//        .probe4(pixel_clock_buffer2),
+//        .probe5(frame_done_buffer2)
+//    );
 
     //
     // VGA signal switching
@@ -254,7 +324,7 @@ module top_level(
     assign b = blank;
 
     // TODO: this is where we would switch the vga circuit's input, based on the game FSM
-    assign rgb = (sw[0] ? track_rgb : camera_debug_rgb);
+    assign rgb = (sw[0] ? camera_debug_rgb : (died ? 12'hF00 : track_rgb));
 
     //
     // VGA wiring

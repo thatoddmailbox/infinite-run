@@ -24,51 +24,52 @@ module gamefsm(
 
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
-            state <= START;
+            state <= PLAYING;
             time_alive <= 0;
             playing <= 0;
             game_over <= 0;
-        end
-        case(state)
-            START: begin
-                reset_game <= 1;
-                if (jump) begin
-                    state <= WAIT_FOR_FALL1;
+        end else begin
+            case(state)
+                START: begin
+                    reset_game <= 1;
+                    if (jump) begin
+                        state <= WAIT_FOR_FALL1;
+                    end
                 end
-            end
-            WAIT_FOR_FALL1: begin
-                reset_game <= 0;
-                if (!jump) begin
-                    state <= PLAYING;
-                    playing <= 1;
+                WAIT_FOR_FALL1: begin
+                    reset_game <= 0;
+                    if (!jump) begin
+                        state <= PLAYING;
+                        playing <= 1;
+                    end
                 end
-            end
-            PLAYING: begin
-                if (pulse) begin
-                    time_alive <= time_alive + 1;
+                PLAYING: begin
+                    if (pulse) begin
+                        time_alive <= time_alive + 1;
+                    end
+                    if (died) begin
+                        state <= GAMEOVER;
+                        game_over <= 1;
+                        playing <= 0;
+                        time_alive <= 0;
+                    end
                 end
-                if (died) begin
-                    state <= GAMEOVER;
-                    game_over <= 1;
-                    playing <= 0;
-                    time_alive <= 0;
+                GAMEOVER: begin
+                    if (jump) begin
+                        state <= WAIT_FOR_FALL2;
+                    end
                 end
-            end
-            GAMEOVER: begin
-                if (jump) begin
-                    state <= WAIT_FOR_FALL2;
+                WAIT_FOR_FALL2: begin
+                    if (!jump) begin
+                        state <= START;
+                        game_over <= 0;
+                    end
                 end
-            end
-            WAIT_FOR_FALL2: begin
-                if (!jump) begin
+                default: begin
                     state <= START;
-                    game_over <= 0;
                 end
-            end
-            default: begin
-                state <= START;
-            end
-        endcase
+            endcase
+        end
     end
 endmodule
 
