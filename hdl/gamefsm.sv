@@ -26,6 +26,7 @@ module gamefsm(
             time_alive <= 0;
             playing <= 0;
             game_over <= 0;
+            reset_game <= 0;
         end else begin
             case(state)
                 START: begin

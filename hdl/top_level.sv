@@ -9,6 +9,9 @@ module top_level(
     // Switches
     input wire [15:0] sw,
 
+    // LEDs
+    output wire [15:0] led,
+
     // Camera signals
     input wire [7:0] ja, // pixel data from camera
     input wire [2:0] jb, // other data from camera
@@ -232,6 +235,11 @@ module top_level(
     wire timer_expired;
     wire timer_start;
     wire [5:0] time_to_wait;
+
+    assign led[3] = reset_game;
+    assign led[2] = game_over;
+    assign led[1] = playing;
+    assign led[0] = pulse;
 //    wire died = 0;
     
     timer timer(
