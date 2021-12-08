@@ -11,14 +11,20 @@ typedef struct packed {
     logic active;
 } obstacle;
 
-
 parameter SCREEN_WIDTH = 1024;
 parameter SCREEN_HEIGHT = 768;
+
+parameter CAMERA_WIDTH = 320;
+parameter CAMERA_HEIGHT = 240;
+parameter CAMERA_SIDE_LANE_WIDTH = 320 / 4;
+localparam CAMERA_MIDDLE_LANE_WIDTH = CAMERA_WIDTH - (2 * CAMERA_SIDE_LANE_WIDTH);
+localparam CAMERA_RIGHT_LANE_X = CAMERA_SIDE_LANE_WIDTH + CAMERA_MIDDLE_LANE_WIDTH;
+localparam CAMERA_CELL_HEIGHT = CAMERA_HEIGHT / 3;
 
 localparam LANE_HEIGHT = SCREEN_HEIGHT / 3;
 
 localparam OBSTACLE_MARGIN = 16;
 localparam OBSTACLE_HEIGHT = LANE_HEIGHT - 2*OBSTACLE_MARGIN;
-localparam OBSTACLE_WIDTH = OBSTACLE_HEIGHT;
+localparam OBSTACLE_WIDTH = OBSTACLE_HEIGHT; // 224
 
 `endif

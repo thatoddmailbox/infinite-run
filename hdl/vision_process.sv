@@ -1,4 +1,5 @@
 `default_nettype none
+`include "data.sv"
 
 module vision_process(
     input wire pixel_clock_in,
@@ -14,13 +15,7 @@ module vision_process(
     output logic data_valid
 );
 
-    parameter FRAME_WIDTH = 10'd320;
-    parameter FRAME_HEIGHT = 9'd240;
-
-    parameter GREEN_THRESHOLD = 6'd25;
-
-    localparam FRAME_WIDTH_DIVIDER = FRAME_WIDTH / 3;
-    localparam FRAME_HEIGHT_DIVIDER = FRAME_HEIGHT / 3;
+    parameter GREEN_THRESHOLD = 6'd12;
 
     wire frame_start = (frame_x_count == 10'd0 && frame_y_count == 9'd0);
 
@@ -31,17 +26,19 @@ module vision_process(
     // |  6  |  7  |  8  |
     // +-----------------+
 
+    logic [2:0] quadrant_votes [8:0];
+
     wire [1:0] quadrant_col = (
-        frame_x_count < FRAME_WIDTH_DIVIDER ?
+        frame_x_count < CAMERA_SIDE_LANE_WIDTH ?
             2'd0 :
-            (frame_x_count < 2*FRAME_WIDTH_DIVIDER ?
+            (frame_x_count < CAMERA_RIGHT_LANE_X ?
                 2'd1 : 2'd2
             )
     );
     wire [1:0] quadrant_row = (
-        frame_y_count < FRAME_HEIGHT_DIVIDER ?
+        frame_y_count < CAMERA_CELL_HEIGHT ?
             2'd0 :
-            (frame_y_count < 2*FRAME_HEIGHT_DIVIDER ?
+            (frame_y_count < 2*CAMERA_CELL_HEIGHT ?
                 2'd1 : 2'd2
             )
     );
@@ -84,6 +81,16 @@ module vision_process(
                 // clear data flag and data
                 data_valid <= 1'b0;
                 quadrants <= 9'b0;
+
+                quadrant_votes[0] <= 3'b0;
+                quadrant_votes[1] <= 3'b0;
+                quadrant_votes[2] <= 3'b0;
+                quadrant_votes[3] <= 3'b0;
+                quadrant_votes[4] <= 3'b0;
+                quadrant_votes[5] <= 3'b0;
+                quadrant_votes[6] <= 3'b0;
+                quadrant_votes[7] <= 3'b0;
+                quadrant_votes[8] <= 3'b0;
             end
 
             // compare the green channel with the threshold
@@ -95,7 +102,10 @@ module vision_process(
             if (pixel_data[10:5] < GREEN_THRESHOLD && frame_x_count > 10) begin
                 // a "green-ness" below the threshold indicates that we are NOT looking at the green screen
                 // and therefore this is the player (or I guess some other blob lol)
-                quadrants[quadrant] <= 1'b1;
+                quadrant_votes[quadrant] <= quadrant_votes[quadrant] + 1'b1;
+                if (quadrant_votes[quadrant] == 3'b111) begin
+                    quadrants[quadrant] <= 1'b1;
+                end
             end
         end
     end
