@@ -141,6 +141,10 @@ module top_level(
     //
     wire [9:0] frame_x_count;
     wire [8:0] frame_y_count;
+    wire [1:0] lane_raw;
+    wire jump_raw;
+    wire [1:0] lane_raw_synced;
+    wire jump_raw_synced;
     wire [1:0] lane;
     wire jump;
     wire [8:0] quadrants;
@@ -170,10 +174,25 @@ module top_level(
         .pixel_data(pixel_data),
         .pixel_valid(pixel_valid),
 
-        .lane(lane),
-        .jump(jump),
+        .lane(lane_raw),
+        .jump(jump_raw),
         .quadrants(quadrants),
         .data_valid(vision_data_valid)
+    );
+
+    vision_debouncer vision_debounce(
+        .system_clock_in(clk_65mhz),
+        .system_reset(reset),
+
+        .pixel_clock_in(pclk_in),
+        .lane_raw(lane_raw),
+        .jump_raw(jump_raw),
+
+        .lane_raw_synced(lane_raw_synced),
+        .jump_raw_synced(jump_raw_synced),
+
+        .lane(lane),
+        .jump(jump)
     );
 
     camera_debug_draw debug_draw(
@@ -195,8 +214,8 @@ module top_level(
         .pixel_valid(pixel_valid),
         .frame_done(frame_done),
 
-        .lane(lane),
-        .jump(jump),
+        .lane((sw[2] ? lane : lane_raw_synced)),
+        .jump((sw[2] ? jump : jump_raw_synced)),
         .quadrants(quadrants),
         .vision_data_valid(vision_data_valid)
     );
@@ -209,10 +228,6 @@ module top_level(
     wire timer_expired;
     wire timer_start;
     wire [5:0] time_to_wait;
-    wire [1:0] lane2;
-    wire jump2;
-    wire [1:0] lane3;
-    wire jump3;
 //    wire died = 0;
     
     timer timer(
@@ -233,9 +248,7 @@ module top_level(
         .playing(playing),
         .game_over(game_over),
         .time_alive(time_alive),
-        .reset_game(reset_game),
-        .lane_out(lane2),
-        .jump_out(jump2));
+        .reset_game(reset_game));
 
     wire [7:0] random_num;
     randomizer randomizer(
@@ -254,16 +267,14 @@ module top_level(
         .rst_in(reset),
         .game_reset(reset_game),
         .frame_trigger(frame_trigger),
-        .jump_in(jump2),
-        .lane_in(lane2),
+        .jump_in(jump),
+        .lane_in(lane),
         .time_alive(time_alive),
         .random_num(random_num[3:0]),
         .random_lane(random_num2[3:2]),
         .random_sprite(random_num2[1:0]),
         .expired_in(timer_expired),
         .obstacles_out(obstacles),
-        .player_lane(lane3),
-        .player_jump(jump3),
         .start_timer(timer_start),
         .time_to_wait(time_to_wait));
 

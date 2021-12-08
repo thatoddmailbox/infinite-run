@@ -14,8 +14,6 @@ module obstacle_generator(
     input wire [1:0] random_sprite,
     input wire expired_in,
     output obstacle obstacles_out [9:0],    // do i need logic here?
-    output logic [1:0] player_lane,
-    output logic player_jump,
     output logic start_timer,
     output logic [5:0] time_to_wait
     );
@@ -38,10 +36,6 @@ module obstacle_generator(
     logic [3:0] start_index;
     logic [3:0] end_index;
     logic [2:0] speed;
-
-    // just passing player position on
-    assign player_jump = jump_in;
-    assign player_lane = lane_in;
 
     stuff_ila ila(
         .clk(clk_in),
