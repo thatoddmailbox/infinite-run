@@ -22,11 +22,11 @@ module gamefsm(
 
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
-            state <= PLAYING;
+            state <= START;
             time_alive <= 0;
             playing <= 0;
             game_over <= 0;
-            reset_game <= 0;
+            reset_game <= 1;
         end else begin
             case(state)
                 START: begin

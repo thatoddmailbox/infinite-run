@@ -10,7 +10,7 @@ module top_level(
     input wire [15:0] sw,
 
     // LEDs
-    output wire [15:0] led,
+    output wire [3:0] led,
 
     // Camera signals
     input wire [7:0] ja, // pixel data from camera
@@ -90,6 +90,25 @@ module top_level(
         .rgb(track_rgb)
     );
 
+    wire [11:0] start_rgb;
+    wire [11:0] death_rgb;
+    screen_draw #(.WIDTH(240), .HEIGHT(256))
+        screen_drawer(.system_clock_in(clk_65mhz),
+        .hcount(hcount),
+        .vcount(vcount),
+        .hsync(hsync),
+        .vsync(vsync),
+        .blank(blank),
+        .rgb(start_rgb));
+        
+    gameover_draw #(.WIDTH(80), .HEIGHT(256))
+        gameover_drawer(.system_clock_in(clk_65mhz),
+        .hcount(hcount),
+        .vcount(vcount),
+        .hsync(hsync),
+        .vsync(vsync),
+        .blank(blank),
+        .rgb(death_rgb));
     //
     // Game logic
     //
@@ -97,7 +116,7 @@ module top_level(
     wire died;
     death d(
         .system_clock_in(clk_65mhz),
-        .reset(sw[15]),
+        .reset(reset_game),
 
         .obstacles(obstacles),
         .lane(lane),
@@ -256,7 +275,7 @@ module top_level(
         .pulse(pulse),
         .died(died),
         .lane(lane),
-        .jump(jump),
+        .jump(jump_raw_synced),
         .playing(playing),
         .game_over(game_over),
         .time_alive(time_alive),
@@ -298,7 +317,7 @@ module top_level(
     assign b = blank;
 
     // TODO: this is where we would switch the vga circuit's input, based on the game FSM
-    assign rgb = (sw[0] ? camera_debug_rgb : (died ? 12'hF00 : track_rgb));
+    assign rgb = (sw[0] ? camera_debug_rgb : (reset_game ? start_rgb : (died ? death_rgb : track_rgb)));
 
     //
     // VGA wiring
