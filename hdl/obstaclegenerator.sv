@@ -4,10 +4,8 @@
 module obstacle_generator(
     input wire clk_in,
     input wire rst_in,
-    input wire jump_in,
     input wire game_reset,
     input wire frame_trigger,
-    input wire [1:0] lane_in,
     input wire [11:0] time_alive,
     input wire [3:0] random_num,
     input wire [1:0] random_lane,
@@ -33,8 +31,6 @@ module obstacle_generator(
     logic [3:0] should_be_active;
     logic is_counting;
     // The two following indices keep track of what interval the active obstacles are in in the obstacles_out array.
-    logic [3:0] start_index;
-    logic [3:0] end_index;
     logic [2:0] speed;
 
     stuff_ila ila(
@@ -76,8 +72,6 @@ module obstacle_generator(
             };
             should_be_active <= 0;
             is_counting <= 0;
-            start_index <= 0;
-            end_index <= 0;
             speed <= 3'b1;
         end else begin
             if (time_alive >= 30) begin

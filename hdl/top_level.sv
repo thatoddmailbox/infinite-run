@@ -147,8 +147,9 @@ module top_level(
     wire jump_raw_synced;
     wire [1:0] lane;
     wire jump;
+    wire [8:0] quadrants_raw;
     wire [8:0] quadrants;
-    wire vision_data_valid;
+    wire vision_data_valid_raw;
 
     wire [11:0] camera_debug_rgb;
 
@@ -176,8 +177,8 @@ module top_level(
 
         .lane(lane_raw),
         .jump(jump_raw),
-        .quadrants(quadrants),
-        .data_valid(vision_data_valid)
+        .quadrants(quadrants_raw),
+        .data_valid(vision_data_valid_raw)
     );
 
     vision_debouncer vision_debounce(
@@ -187,12 +188,15 @@ module top_level(
         .pixel_clock_in(pclk_in),
         .lane_raw(lane_raw),
         .jump_raw(jump_raw),
+        .quadrants_raw(quadrants_raw),
+        .vision_data_valid_raw(vision_data_valid_raw),
 
         .lane_raw_synced(lane_raw_synced),
         .jump_raw_synced(jump_raw_synced),
 
         .lane(lane),
-        .jump(jump)
+        .jump(jump),
+        .quadrants(quadrants)
     );
 
     camera_debug_draw debug_draw(
@@ -217,7 +221,7 @@ module top_level(
         .lane((sw[2] ? lane : lane_raw_synced)),
         .jump((sw[2] ? jump : jump_raw_synced)),
         .quadrants(quadrants),
-        .vision_data_valid(vision_data_valid)
+        .vision_data_valid(1'b1)
     );
     
     wire reset_game;
@@ -267,8 +271,6 @@ module top_level(
         .rst_in(reset),
         .game_reset(reset_game),
         .frame_trigger(frame_trigger),
-        .jump_in(jump),
-        .lane_in(lane),
         .time_alive(time_alive),
         .random_num(random_num[3:0]),
         .random_lane(random_num2[3:2]),
@@ -277,53 +279,6 @@ module top_level(
         .obstacles_out(obstacles),
         .start_timer(timer_start),
         .time_to_wait(time_to_wait));
-
-    //
-    // Camera debugging :(
-    //
-    logic [9:0] frame_x_count_buffer;
-    logic [9:0] frame_x_count_buffer2;
-    logic [8:0] frame_y_count_buffer;
-    logic [8:0] frame_y_count_buffer2;
-    logic [8:0] quadrants_buffer;
-    logic [8:0] quadrants_buffer2;
-    logic vision_data_valid_buffer;
-    logic vision_data_valid_buffer2;
-    logic pixel_clock_buffer;
-    logic pixel_clock_buffer2;
-    logic frame_done_buffer;
-    logic frame_done_buffer2;
-
-    always_ff @(posedge clk_65mhz) begin
-        frame_x_count_buffer <= frame_x_count;
-        frame_x_count_buffer2 <= frame_x_count_buffer;
-
-        frame_y_count_buffer <= frame_y_count;
-        frame_y_count_buffer2 <= frame_y_count_buffer;
-
-        quadrants_buffer <= quadrants;
-        quadrants_buffer2 <= quadrants_buffer;
-
-        vision_data_valid_buffer <= vision_data_valid;
-        vision_data_valid_buffer2 <= vision_data_valid_buffer;
-
-        // pclk_in is already synced kinda??
-        pixel_clock_buffer <= pclk_in;
-        pixel_clock_buffer2 <= pixel_clock_buffer;
-
-        frame_done_buffer <= frame_done;
-        frame_done_buffer2 <= frame_done_buffer;
-    end
-
-//    camera_debug_draw_ila ila(
-//        .clk(clk_65mhz),
-//        .probe0(quadrants_buffer2),
-//        .probe1(frame_x_count_buffer2),
-//        .probe2(frame_y_count_buffer2),
-//        .probe3(vision_data_valid_buffer2),
-//        .probe4(pixel_clock_buffer2),
-//        .probe5(frame_done_buffer2)
-//    );
 
     //
     // VGA signal switching
