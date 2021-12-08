@@ -4,18 +4,14 @@
 module obstacle_generator(
     input wire clk_in,
     input wire rst_in,
-    input wire jump_in,
     input wire game_reset,
     input wire frame_trigger,
-    input wire [1:0] lane_in,
     input wire [11:0] time_alive,
     input wire [3:0] random_num,
     input wire [1:0] random_lane,
     input wire [1:0] random_sprite,
     input wire expired_in,
     output obstacle obstacles_out [9:0],    // do i need logic here?
-    output logic [1:0] player_lane,
-    output logic player_jump,
     output logic start_timer,
     output logic [5:0] time_to_wait
     );
@@ -35,13 +31,7 @@ module obstacle_generator(
     logic [3:0] should_be_active;
     logic is_counting;
     // The two following indices keep track of what interval the active obstacles are in in the obstacles_out array.
-    logic [3:0] start_index;
-    logic [3:0] end_index;
     logic [2:0] speed;
-
-    // just passing player position on
-    assign player_jump = jump_in;
-    assign player_lane = lane_in;
 
     stuff_ila ila(
         .clk(clk_in),
@@ -82,8 +72,6 @@ module obstacle_generator(
             };
             should_be_active <= 0;
             is_counting <= 0;
-            start_index <= 0;
-            end_index <= 0;
             speed <= 3'b1;
         end else begin
             if (time_alive >= 30) begin
@@ -147,7 +135,7 @@ module obstacle_generator(
 
                 // generate new obstacle
                 obstacles_out[next_free_slot].active <= 1;
-                obstacles_out[next_free_slot].lane <= random_lane;
+                obstacles_out[next_free_slot].lane <= (random_lane == 2'd3 ? 2'd1 : random_lane);
                 obstacles_out[next_free_slot].position <= 11'd1023 + OBSTACLE_WIDTH;
                 obstacles_out[next_free_slot].sprite_type <= random_sprite;
             end else begin

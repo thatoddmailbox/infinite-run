@@ -10,9 +10,7 @@ module gamefsm(
     output logic playing,
     output logic game_over,
     output logic [11:0] time_alive,
-    output logic reset_game,
-    output logic [1:0] lane_out,
-    output logic jump_out
+    output logic reset_game
     );
     parameter START = 3'b0;
     parameter WAIT_FOR_FALL1 = 3'b1;
