@@ -11,6 +11,8 @@ module top_level(
 
     // LEDs
     output wire [3:0] led,
+    output wire ca, cb, cc, cd, ce, cf, cg, dp,
+    output wire [7:0] an,
 
     // Camera signals
     input wire [7:0] ja, // pixel data from camera
@@ -279,7 +281,23 @@ module top_level(
         .playing(playing),
         .game_over(game_over),
         .time_alive(time_alive),
-        .reset_game(reset_game));
+        .reset_game(reset_game)
+    );
+
+    game_timer t(
+        .system_clock_in(clk_65mhz),
+        .reset_game(reset_game),
+        .playing(playing),
+
+        .ca(ca),
+        .cb(cb),
+        .cc(cc),
+        .cd(cd),
+        .ce(ce),
+        .cf(cf),
+        .cg(cg),
+        .an_out(an)
+    );
 
     wire [7:0] random_num;
     randomizer randomizer(
