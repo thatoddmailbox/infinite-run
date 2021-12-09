@@ -7,10 +7,12 @@ module gamefsm(
     input wire died,
     input wire [1:0] lane,
     input wire jump,
+    input wire got_powerup,
     output logic playing,
     output logic game_over,
     output logic [11:0] time_alive,
-    output logic reset_game
+    output logic reset_game,
+    output logic [3:0] num_lives
     );
     parameter START = 3'b0;
     parameter WAIT_FOR_FALL1 = 3'b1;
@@ -27,10 +29,12 @@ module gamefsm(
             playing <= 0;
             game_over <= 0;
             reset_game <= 1;
+            num_lives <= 1;
         end else begin
             case(state)
                 START: begin
                     reset_game <= 1;
+                    num_lives <= 1;
                     if (jump) begin
                         state <= WAIT_FOR_FALL1;
                     end
@@ -46,11 +50,17 @@ module gamefsm(
                     if (pulse) begin
                         time_alive <= time_alive + 1;
                     end
-                    if (died) begin
-                        state <= GAMEOVER;
-                        game_over <= 1;
-                        playing <= 0;
-                        time_alive <= 0;
+                    if (got_powerup && !died) begin
+                        num_lives <= num_lives + 1;
+                    end else if (died && !got_powerup) begin
+                        if (num_lives == 1) begin
+                            state <= GAMEOVER;
+                            game_over <= 1;
+                            playing <= 0;
+                            time_alive <= 0;
+                        end else if (num_lives >= 1) begin
+                            num_lives <= num_lives - 1;
+                        end
                     end
                 end
                 GAMEOVER: begin
