@@ -11,7 +11,7 @@ module top_level(
 
     // LEDs
     output wire [3:0] led,
-    output wire ca, cb, cc, cd, ce, cf, cg, dp,
+    output wire ca, cb, cc, cd, ce, cf, cg,
     output wire [7:0] an,
 
     // Camera signals

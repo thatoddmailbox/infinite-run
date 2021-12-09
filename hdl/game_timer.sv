@@ -6,19 +6,20 @@ module game_timer(
     input wire reset_game,
     input wire playing,
 
-    output logic [6:0] ca, cb, cc, cd, ce, cf, cg,
+    output logic ca, cb, cc, cd, ce, cf, cg,
     output logic [7:0] an_out
 );
 
-    display_8hex display(
+    seven_seg_controller display(
         .clk_in(system_clock_in),
-        .data_in(elapsed_time),
-        .seg_out({cg, cf, ce, cd, cc, cb, ca}),
-        .strobe_out(an_out)
+        .rst_in(reset_game),
+        .val_in(elapsed_time),
+        .cat_out({cg, cf, ce, cd, cc, cb, ca}),
+        .an_out(an_out)
     );
 
     logic [27:0] elapsed_time;
-    logic [23:0] elapsed_time_counter;
+    logic [25:0] elapsed_time_counter;
 
     always @(posedge system_clock_in) begin
         if (reset_game) begin
