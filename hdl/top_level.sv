@@ -85,6 +85,7 @@ module top_level(
         .blank(blank),
 
         .obstacles(obstacles),
+        .lives(lives),
 
         .lane(lane),
         .jump(jump),
@@ -114,8 +115,8 @@ module top_level(
     //
     // Game logic
     //
-//    assign died = 0;
     wire died;
+    wire got_powerup;
     death d(
         .system_clock_in(clk_65mhz),
         .reset(reset_game),
@@ -124,7 +125,8 @@ module top_level(
         .lane(lane),
         .jump(jump),
 
-        .died(died)
+        .died(died),
+        .got_powerup(got_powerup)
     );
 
     //
@@ -256,6 +258,7 @@ module top_level(
     wire timer_expired;
     wire timer_start;
     wire [5:0] time_to_wait;
+    wire [3:0] lives;
 
     assign led[3] = reset_game;
     assign led[2] = game_over;
@@ -281,7 +284,9 @@ module top_level(
         .playing(playing),
         .game_over(game_over),
         .time_alive(time_alive),
-        .reset_game(reset_game)
+        .reset_game(reset_game),
+        .num_lives(lives),
+        .got_powerup(got_powerup)
     );
 
     game_timer t(
@@ -311,6 +316,13 @@ module top_level(
         .rst_in(reset),
         .value(random_num2));
 
+    stuff_ila ila(
+        .clk(clk_65mhz),
+        .probe0(reset),
+        .probe1(random_num),
+        .probe2(random_num2)
+    );
+
     obstacle_generator obstacle_generator(
         .clk_in(clk_65mhz),
         .rst_in(reset),
@@ -335,7 +347,7 @@ module top_level(
     assign b = blank;
 
     // TODO: this is where we would switch the vga circuit's input, based on the game FSM
-    assign rgb = (sw[0] ? camera_debug_rgb : (reset_game ? start_rgb : (died ? death_rgb : track_rgb)));
+    assign rgb = (sw[0] ? camera_debug_rgb : (reset_game ? start_rgb : (game_over ? death_rgb : track_rgb)));
 
     //
     // VGA wiring

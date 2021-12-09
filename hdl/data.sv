@@ -14,6 +14,12 @@ typedef struct packed {
 parameter SCREEN_WIDTH = 1024;
 parameter SCREEN_HEIGHT = 768;
 
+parameter LIVES_BAR_WIDTH = 32+16;
+parameter LIFE_WIDTH = 32;
+parameter LIFE_HEIGHT = 32;
+parameter LIFE_Y = 8;
+parameter LIFE_MARGIN = 8;
+
 parameter CAMERA_WIDTH = 320;
 parameter CAMERA_HEIGHT = 240;
 
@@ -33,8 +39,8 @@ localparam OBSTACLE_HEIGHT = LANE_HEIGHT - 2*OBSTACLE_MARGIN;
 localparam OBSTACLE_WIDTH = OBSTACLE_HEIGHT; // 224
 
 localparam POWERUP_OBSTACLE_TYPE = 3;
-localparam POWERUP_HEIGHT = 64;
-localparam POWERUP_WIDTH = 64;
+localparam POWERUP_HEIGHT = 32;
+localparam POWERUP_WIDTH = 32;
 localparam POWERUP_MARGIN = (LANE_HEIGHT - POWERUP_HEIGHT) / 2;
 
 `endif
