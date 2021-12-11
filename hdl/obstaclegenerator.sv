@@ -34,18 +34,6 @@ module obstacle_generator(
     logic is_counting;
 
     logic [2:0] speed;
-
-//    stuff_ila ila(
-//        .clk(clk_in),
-//        .probe0(time_alive),
-//        .probe1(start_timer),
-//        .probe2(obstacles_out[0]),
-//        .probe3(frame_trigger),
-//        .probe4(curr_active),
-//        .probe5(should_be_active),
-//        .probe6(expired_in),
-//        .probe7(next_free_slot)
-//    );
     
     wire [3:0] next_free_slot = (!obstacles_out[0].active) ? 4'd0 :
                                 (!obstacles_out[1].active) ? 4'd1 :
